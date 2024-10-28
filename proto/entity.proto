@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package entity;
+
+option go_package = "./proto";
+
+service EntityService {
+  rpc GetEntity(EntityRequest) returns (Entity) {}
+}
+
+message EntityRequest { string id = 1; }
+
+message Entity {
+  string id = 1;
+  string name = 2;
+}
