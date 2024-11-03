@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v5.26.1
-// source: proto/entity.proto
+// source: entity.proto
 
-package proto
+package entity
 
 import (
 	context "context"
@@ -105,5 +105,5 @@ var EntityService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/entity.proto",
+	Metadata: "entity.proto",
 }

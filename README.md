@@ -36,5 +36,17 @@ message User {
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative user.proto
 ```
 
+## 提供RESTful API服务
+
+### 生成样板代码
+```bash
+go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2
+protoc -I=proto \
+   --go_out=entity --go_opt=paths=source_relative \
+   --go-grpc_out=entity --go-grpc_opt=paths=source_relative \
+   --grpc-gateway_out=entity --grpc-gateway_opt=paths=source_relative \
+   proto/entity.proto
+```
+
 # 参考链接：
 1. https://protobuf.dev/reference/go/go-generated/

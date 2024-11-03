@@ -1,11 +1,15 @@
 syntax = "proto3";
 
 package entity;
-
-option go_package = "./proto";
+option go_package = "github.com/WenChunTech/Microservices-Template/proto/entity";
+import "google/api/annotations.proto";
 
 service EntityService {
-  rpc GetEntity(EntityRequest) returns (Entity) {}
+  rpc GetEntity(EntityRequest) returns (Entity) {
+    option (google.api.http) = {
+      get : "/v1/api/entity"
+    };
+  }
 }
 
 message EntityRequest { string id = 1; }
