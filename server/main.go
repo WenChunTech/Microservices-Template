@@ -9,13 +9,14 @@ import (
 	"net/http"
 
 	"github.com/WenChunTech/Microservices-Template/entity"
+	"github.com/WenChunTech/Microservices-Template/logger"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var port = flag.Int("port", 50051, "the port to serve on")
-var restful = flag.Int("restful", 8080, "the port to restful serve on")
+var grpcPort = flag.Int("port", 8081, "the port to grpc serve on")
+var restfulPort = flag.Int("restful", 8080, "the port to restful serve on")
 
 type SpecificEntity struct {
 	entity.UnimplementedEntityServiceServer
@@ -35,32 +36,38 @@ func main() {
 
 	entity.RegisterEntityServiceServer(server, SpecificEntity{})
 
-	listener, err := net.Listen("tcp", "0.0.0.0:8080")
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", *grpcPort))
 	if err != nil {
-		log.Fatalln("Failed to listen: ", err)
+		logger.Error("Failed to listen: ", err)
 	}
-	server.Serve(listener)
+
+	go func() {
+		server.Serve(listener)
+		logger.Info("Server started on port: ", *grpcPort)
+	}()
 
 	conn, err := grpc.NewClient(
-		"localhost:50051",
+		fmt.Sprintf(":%d", *grpcPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		log.Fatalln("Failed to dial server:", err)
+		logger.Error("Failed to create client connection: ", err)
 	}
 
 	gwmux := runtime.NewServeMux()
 	err = entity.RegisterEntityServiceHandler(context.Background(), gwmux, conn)
 	if err != nil {
-		log.Fatalln("Failed to register gateway:", err)
+		logger.Error("Failed to register gateway: ", err)
 	}
 
 	gwServer := &http.Server{
-		Addr:    fmt.Sprintf(":%d", *restful),
+		Addr:    fmt.Sprintf(":%d", *restfulPort),
 		Handler: gwmux,
 	}
 
-	log.Println("Serving gRPC-Gateway on http://0.0.0.0" + fmt.Sprintf(":%d", *restful))
-	log.Fatalln(gwServer.ListenAndServe())
+	err = gwServer.ListenAndServe()
+	if err != nil {
+		logger.Error("Failed to start restful server: ", err)
+	}
 
 }

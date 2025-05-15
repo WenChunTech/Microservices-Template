@@ -1,4 +1,4 @@
-package log
+package logger
 
 import (
 	"log"
@@ -6,15 +6,14 @@ import (
 	"os"
 )
 
-func InitSlog(level slog.Level) *slog.Logger {
+func InitSlog(level slog.Level) {
 	opts := &slog.HandlerOptions{
 		Level:     level,
 		AddSource: true,
 	}
 
 	h := slog.NewJSONHandler(os.Stdout, opts)
-
-	return slog.New(h)
+	slog.SetDefault(slog.New(h))
 }
 
 func InitLog() {
