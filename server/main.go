@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -11,8 +12,12 @@ import (
 	"github.com/WenChunTech/Microservices-Template/entity"
 	"github.com/WenChunTech/Microservices-Template/logger"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	provider "github.com/WenChunTech/Microservices-Template/otel"
 )
 
 var grpcPort = flag.Int("port", 8081, "the port to grpc serve on")
@@ -31,8 +36,31 @@ func (e SpecificEntity) GetEntity(context.Context, *entity.EntityRequest) (*enti
 }
 
 func main() {
+	// 设置OpenTelemetry。
+	serviceName := "dice"
+	serviceVersion := "0.1.0"
 
-	server := grpc.NewServer()
+	otelShutdown, err := provider.SetupOTelSDK(context.Background(), serviceName, serviceVersion)
+	if err != nil {
+		log.Fatalln("Failed to setup OpenTelemetry: ", err)
+	}
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
+
+	tp := otel.GetTracerProvider()
+	mp := otel.GetMeterProvider()
+	p := otel.GetTextMapPropagator()
+
+	server := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			otelgrpc.UnaryServerInterceptor(
+				otelgrpc.WithTracerProvider(tp),
+				otelgrpc.WithMeterProvider(mp),
+				otelgrpc.WithPropagators(p),
+			),
+		),
+	)
 
 	entity.RegisterEntityServiceServer(server, SpecificEntity{})
 
